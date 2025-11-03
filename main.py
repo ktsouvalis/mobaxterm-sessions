@@ -33,7 +33,10 @@ parser.add_argument(
 args = parser.parse_args()
 
 SRC_FILE = args.src_file
-DEST_DIR = f"{HOME}/.local/share/remmina"
+flatpak_dir = f"{HOME}/.var/app/org.remmina.Remmina/data/remmina"
+default_dir = f"{HOME}/.local/share/remmina"
+DEST_DIR = flatpak_dir if os.path.exists(f"{HOME}/.var/app/org.remmina.Remmina") else default_dir
+
 DRY_RUN = args.dry_run
 
 # Validate input file exists for a clearer error message
