@@ -4,9 +4,9 @@
 # 1) Copy this file to moba_bookmarks.txt in the project root.
 # 2) Replace the placeholder hostnames (e.g., ssh.example.local) and usernames with your own.
 # 3) If you use SSH keys, adjust the key path field. _ProfileDir_\\.ssh\id_ed25519 maps to ~/.ssh/id_ed25519
-# 4) Run the converter:
-#    python3 main.py --file moba_bookmarks.txt
-#    python3 main.py --file moba_bookmarks.txt --dry-run  # to preview
+# 4) Run one of the converters in dry-run to preview:
+#    python3 moba2remmina.py --file moba_bookmarks.txt --dry-run
+#    python3 moba2rabbit.py  --file moba_bookmarks.txt --dry-run
 #
 # Notes:
 # - Keep the overall structure. Lines like [Bookmarks_1] and SubRep= define groups.
@@ -33,4 +33,3 @@ Example-Telnet-Device=#98#1%telnet.example.local%23%telnetuser%%-1%-1%%%%0%0%0%
 SubRep=Misc Examples
 ImgNum=0
 Example-SSH-NoUser=#109#0%host3.example.local%22%%%%0%0%0%
-

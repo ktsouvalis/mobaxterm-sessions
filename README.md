@@ -12,25 +12,25 @@ Convert MobaXterm bookmarks export to Remmina profiles.
 Basic run (uses `./moba_bookmarks.txt` by default):
 
 ```sh
-python3 main.py
+python3 moba2remmina.py
 ```
 
 Specify a bookmarks file explicitly:
 
 ```sh
-python3 main.py --file moba_bookmarks.txt
+python3 moba2remmina.py --file moba_bookmarks.txt
 ```
 
 Short flag:
 
 ```sh
-python3 main.py -f /path/to/moba_bookmarks.txt
+python3 moba2remmina.py -f /path/to/moba_bookmarks.txt
 ```
 
 Dry-run (no files created; shows the target paths):
 
 ```sh
-python3 main.py --file moba_bookmarks.txt --dry-run
+python3 moba2remmina.py --file moba_bookmarks.txt --dry-run
 ```
 
 Output profiles are created in:
@@ -45,7 +45,7 @@ Option A — Start from the example template (recommended for testing):
 ```sh
 cp moba_bookmarks.txt.example moba_bookmarks.txt
 # edit moba_bookmarks.txt
-python3 main.py --file moba_bookmarks.txt --dry-run
+python3 moba2remmina.py --file moba_bookmarks.txt --dry-run
 ```
 
 - Keep the overall structure:
@@ -73,3 +73,70 @@ Option B — Use your MobaXterm export as-is:
 ## Troubleshooting
 - If you see `Error: input file not found`, ensure the path to the export file is correct and readable.
 - Remmina won’t pick up files unless they’re under `~/.local/share/remmina/`.
+
+
+## moba2rabbit
+
+Convert the same MobaXterm bookmarks export into Rabbit Remote Control favorites (.rrc) and append them to Rabbit's Favorite.ini. SSH and Telnet are supported; original groups are preserved as metadata.
+
+### Requirements
+- Python 3.7+
+- Rabbit Remote Control installed locally, with configuration created at least once
+  - Expected paths (created by Rabbit on first run):
+    - `$HOME/Documents/Rabbit/RabbitRemoteControl/etc/Favorite.ini`
+    - `$HOME/Documents/Rabbit/RabbitRemoteControl/share`
+
+If these paths don't exist, open Rabbit, create a dummy connection, then close it.
+
+### Usage
+
+Basic run (reads `./moba_bookmarks.txt` by default):
+
+```sh
+python3 moba2rabbit.py
+```
+
+Specify a bookmarks file explicitly:
+
+```sh
+python3 moba2rabbit.py --file moba_bookmarks.txt
+```
+
+Short flag:
+
+```sh
+python3 moba2rabbit.py -f /path/to/moba_bookmarks.txt
+```
+
+Dry-run (no files created; prints intended actions):
+
+```sh
+python3 moba2rabbit.py --file moba_bookmarks.txt --dry-run
+```
+
+### Output
+- Creates `.rrc` files under: `$HOME/Documents/Rabbit/RabbitRemoteControl/share/`
+- Appends entries to: `$HOME/Documents/Rabbit/RabbitRemoteControl/etc/Favorite.ini`
+  - Adds `File_{idx}`, `Name_{idx}`, and a minimal `Descripte_{idx}` (includes the original group if present)
+  - Updates `RootCount` accordingly
+
+When run with `--dry-run`, the script prints the target `.rrc` paths and Favorite entries instead of writing them.
+
+### Input guidance
+- Use the same input file described above. You can:
+  - Start from the sanitized template:
+    ```sh
+    cp moba_bookmarks.txt.example moba_bookmarks.txt
+    # edit placeholders (hosts, usernames, optional key path)
+    python3 moba2rabbit.py --file moba_bookmarks.txt --dry-run
+    ```
+  - Or pass your full MobaXterm export; only lines under `[Bookmarks_*]`, `SubRep=...`, and `Name=...=...` are processed. `ImgNum=` and comment lines are ignored.
+
+### Notes
+- SSH key paths like `_ProfileDir_\\.ssh\id_ed25519` are mapped to `~/.ssh/id_ed25519`.
+- Visible names are not prefixed with the group; group is stored as metadata and echoed in the description.
+- Unknown protocols are skipped (reported on stderr) rather than imported.
+
+### Troubleshooting
+- `Error: expected Rabbit path not found: ...` → Launch Rabbit once and create a dummy connection so it creates its directories and Favorite.ini.
+- `Error: input file not found: ...` → Check your `--file` path.
