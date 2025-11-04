@@ -1,13 +1,50 @@
-# moba-to-remmina
+# moba-to-remmina (plus PuTTY and Rabbit)
 
-Convert MobaXterm bookmarks export to Remmina profiles.
+Convert a MobaXterm bookmarks export into:
+- Remmina profiles (.remmina)
+- PuTTY saved sessions
+- Rabbit Remote Control favorites (.rrc + Favorite.ini entries)
 
 ## Requirements
 - Python 3.7+
 - A MobaXterm bookmarks export file (e.g., `moba_bookmarks.txt`)
-- Linux desktop with Remmina (files will be written to `~/.local/share/remmina`)
+- For Remmina: Linux desktop with Remmina (profiles go under `~/.local/share/remmina` or the Flatpak dir)
+- For PuTTY: either native PuTTY or Flatpak PuTTY (sessions directory will be created if missing)
+- For Rabbit: Rabbit Remote Control installed and run at least once to create its config paths
 
-## Usage
+## Preparing your input (choose one)
+
+Option A — Start from the sanitized template (recommended for testing):
+- Copy the provided template and edit placeholders (hosts, usernames, optional SSH key path):
+
+```sh
+cp moba_bookmarks.txt.example moba_bookmarks.txt
+# edit moba_bookmarks.txt
+```
+
+- Keep the overall structure:
+  - Group headers like `[Bookmarks_1]`
+  - A group line like `SubRep=Example Servers`
+  - Optional `ImgNum=` lines (these are ignored)
+  - One or more entries like `Example-SSH-Host=...` (the right side is the MobaXterm-encoded fields)
+- Lines starting with `#` are comments and ignored by the converters.
+
+Option B — Use your MobaXterm export as-is:
+- Export your bookmarks from MobaXterm to the text/INI-like format that contains sections named `[Bookmarks_*]` with entries `VisibleName=encoded_fields`.
+- The converters look for:
+  - Section headers: `[Bookmarks_*]`
+  - Group name: `SubRep=...`
+  - Entries: `Name=...` where the right-hand side starts with `#109` (SSH) or `#98` (Telnet), then `%host%port%user%...`
+  - `ImgNum=` and blank/comment lines are ignored.
+- You can pass the full export file directly with `--file`. Only matching lines will be processed.
+
+---
+
+## moba2remmina
+
+Convert MobaXterm bookmarks export to Remmina profiles.
+
+### Usage
 
 Basic run (uses `./moba_bookmarks.txt` by default):
 
@@ -33,54 +70,71 @@ Dry-run (no files created; shows the target paths):
 python3 moba2remmina.py --file moba_bookmarks.txt --dry-run
 ```
 
-Output profiles are created in:
+### Output
+- Profiles are created in:
+  - Flatpak: `~/.var/app/org.remmina.Remmina/data/remmina/*.remmina`
+  - Native:  `~/.local/share/remmina/*.remmina`
 
-- `~/.local/share/remmina/*.remmina`
+### Notes
+- SSH entries attempt to detect a private key path if present in the export. `_ProfileDir_\\.ssh\...` maps to `~/.ssh/...`.
+- Unknown protocols default to SSH.
+- Remmina filenames are sanitized to `[A-Za-z0-9._-]`.
 
-## Preparing your input (choose one)
+---
 
-Option A — Start from the example template (recommended for testing):
-- Copy the provided sanitized template and then edit placeholders (hosts, usernames, optional SSH key path):
+## moba2putty
+
+Convert MobaXterm bookmarks to PuTTY saved sessions. Flatpak path is preferred by default; you can override.
+
+### Usage
+
+Basic run (reads `./moba_bookmarks.txt`):
 
 ```sh
-cp moba_bookmarks.txt.example moba_bookmarks.txt
-# edit moba_bookmarks.txt
-python3 moba2remmina.py --file moba_bookmarks.txt --dry-run
+python3 moba2putty.py
 ```
 
-- Keep the overall structure:
-  - Group headers like `[Bookmarks_1]`
-  - A group name line like `SubRep=Example Servers`
-  - Optional `ImgNum=` lines (these are ignored)
-  - One or more entries like `Example-SSH-Host=...` (the right side is the encoded fields from MobaXterm)
-- Comment lines starting with `#` are ignored, so you can annotate your file.
+Explicit file and dry-run preview:
 
-Option B — Use your MobaXterm export as-is:
-- Export your bookmarks from MobaXterm to a text/INI-like format that contains sections named `[Bookmarks_*]` with entries in the form `VisibleName=encoded_fields`.
-- The converter looks for the following lines and ignores the rest:
-  - Section headers: `[Bookmarks_*]`
-  - Group name: `SubRep=...`
-  - Entries: `Name=...` where the right-hand side contains the MobaXterm-encoded connection string (e.g., starts with `#109` for SSH or `#98` for Telnet, then `%host%port%user%...`).
-  - `ImgNum=` and blank/comment lines are safely ignored.
-- You can pass the full export file directly with `--file`. Only matching lines will be processed.
+```sh
+python3 moba2putty.py --file moba_bookmarks.txt --dry-run
+```
 
-## Notes
-- SSH entries attempt to detect a private key path if present in the MobaXterm export. `_ProfileDir_\\.ssh\...` is mapped to `~/.ssh/...`.
-- Unknown protocols default to SSH.
-- Filenames are sanitized to `[A-Za-z0-9._-]` only.
-- Lines beginning with `#` are treated as comments and ignored by the converter.
+Control the target sessions directory:
 
-## Troubleshooting
-- If you see `Error: input file not found`, ensure the path to the export file is correct and readable.
-- Remmina won’t pick up files unless they’re under `~/.local/share/remmina/`.
+- Force native path (`~/.config/putty/sessions`, or legacy `~/.putty/sessions` if present):
 
+```sh
+python3 moba2putty.py --native -f moba_bookmarks.txt
+```
+
+- Force Flatpak path (`~/.var/app/uk.org.greenend.chiark.sgtatham.putty/config/putty/sessions`):
+
+```sh
+python3 moba2putty.py --flatpak -f moba_bookmarks.txt
+```
+
+- Custom directory:
+
+```sh
+python3 moba2putty.py --target /path/to/sessions -f moba_bookmarks.txt
+```
+
+### Output
+- Session files are created under the chosen PuTTY sessions directory. Names are URL-encoded to be filesystem-safe.
+
+### Notes
+- SSH key paths like `_ProfileDir_\\.ssh\id_ed25519` are mapped to `~/.ssh/id_ed25519`.
+- Original group (if any) is written as `_ImportedGroup` metadata in the session.
+- Protocols supported: SSH and Telnet; others are skipped.
+
+---
 
 ## moba2rabbit
 
 Convert the same MobaXterm bookmarks export into Rabbit Remote Control favorites (.rrc) and append them to Rabbit's Favorite.ini. SSH and Telnet are supported; original groups are preserved as metadata.
 
 ### Requirements
-- Python 3.7+
 - Rabbit Remote Control installed locally, with configuration created at least once
   - Expected paths (created by Rabbit on first run):
     - `$HOME/Documents/Rabbit/RabbitRemoteControl/etc/Favorite.ini`
@@ -137,6 +191,19 @@ When run with `--dry-run`, the script prints the target `.rrc` paths and Favorit
 - Visible names are not prefixed with the group; group is stored as metadata and echoed in the description.
 - Unknown protocols are skipped (reported on stderr) rather than imported.
 
-### Troubleshooting
-- `Error: expected Rabbit path not found: ...` → Launch Rabbit once and create a dummy connection so it creates its directories and Favorite.ini.
-- `Error: input file not found: ...` → Check your `--file` path.
+---
+
+## Quick start (dry-run with the template)
+
+```sh
+cp moba_bookmarks.txt.example moba_bookmarks.txt
+python3 moba2remmina.py --file moba_bookmarks.txt --dry-run
+python3 moba2putty.py   --file moba_bookmarks.txt --dry-run
+python3 moba2rabbit.py  --file moba_bookmarks.txt --dry-run
+```
+
+## Troubleshooting
+- `Error: input file not found` → Ensure the `--file` path is correct and readable.
+- Remmina: Profiles must be under `~/.local/share/remmina/` (or Remmina Flatpak data dir) to be detected.
+- PuTTY: If using Flatpak, sessions live under `~/.var/app/uk.org.greenend.chiark.sgtatham.putty/config/putty/sessions`.
+- Rabbit: If its paths don’t exist yet, run Rabbit once and create a dummy connection so it creates `Favorite.ini` and the `share` directory.
