@@ -1,4 +1,4 @@
-# moba-to-remmina (plus PuTTY and Rabbit)
+# mobaxterm-sessions
 
 Convert a MobaXterm bookmarks export into:
 - Remmina profiles (.remmina)
