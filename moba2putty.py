@@ -85,8 +85,11 @@ def write_session(entry: Entry, target_dir: Path):
         "UserName": entry.user,
         "TerminalType": "xterm",
         # readable on open:
-        # "Colour0": "255,255,255",   # default FG = white
-        # "Colour2": "0,0,0",         # default BG = black
+        "Colour0": "255,255,255",   # default FG = white
+        "Colour2": "0,0,0",         # default BG = black
+        "TermWidth": 218,
+        "TermHeight": 55
+
     }
     if entry.protocol == "SSH" and entry.key_path:
         settings["PublicKeyFile"] = entry.key_path
@@ -105,7 +108,7 @@ def main():
                     help="Path to MobaXterm bookmarks export")
     ap.add_argument("-n","--dry-run", action="store_true", help="Preview without writing files")
     ap.add_argument("--target", help="Override target sessions directory")
-    ap.add_argument("--native", action="store_true", help="Force native path (~/.config/putty/sessions)")
+    ap.add_argument("--native", action="store_true", help="Force native path (~/.putty/sessions)")
     ap.add_argument("--flatpak", action="store_true", help="Force Flatpak path (~/.var/app/.../config/putty/sessions)")
     args = ap.parse_args()
 
