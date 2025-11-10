@@ -88,8 +88,8 @@ def write_session(entry: Entry, target_dir: Path):
         "Colour0": "255,255,255",   # default FG = white
         "Colour2": "0,0,0",         # default BG = black
         "TermWidth": 218,
-        "TermHeight": 55
-
+        "TermHeight": 55,
+        "FontName": "client:Monospace 13",
     }
     if entry.protocol == "SSH" and entry.key_path:
         settings["PublicKeyFile"] = entry.key_path
